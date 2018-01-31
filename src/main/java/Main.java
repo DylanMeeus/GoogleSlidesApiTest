@@ -6,7 +6,7 @@ import main.service.SlideService;
 import java.io.IOException;
 import java.util.List;
 
-public class Quickstart {
+public class Main {
     /** Application name. */
     private static final String APPLICATION_NAME =
             "Google Slides API Test";
