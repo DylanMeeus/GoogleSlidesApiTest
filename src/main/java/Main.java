@@ -23,31 +23,46 @@ public class Main {
         System.out.printf("The presentation contains %s slides:\n", slides.size());
         for (int i = 0; i < slides.size(); i++) {
             Page slide = slides.get(i);
-            System.out.printf("- Slide #%s contains %s elements.\n", i + 1,
-                    slide.getPageElements().size());
+            if (slide.getPageElements() != null) {
+                System.out.printf("- Slide #%s contains %s elements.\n", i + 1, slide.getPageElements().size());
+            }
         }
 
-        List<Page> newSlides = new ArrayList<>(slides);
-        Page p = new Page();
-        PageElement testElement = new PageElement();
-        testElement.setTitle("NIEUWE TITEL");
-        p.setPageElements(new ArrayList<PageElement>(){{
-            add(testElement);}});
-        newSlides.add(p);
-        presentation.setSlides(newSlides);
-        presentation.setTitle("Test_Titlle");
-        Request r = new Request();
-        CreateSlideRequest csr = new CreateSlideRequest();
-        String objectId = p.getObjectId();
-        csr.setObjectId(objectId);
-        csr.setInsertionIndex(0);
-        r.setCreateSlide(csr);
 
+        List<Request> requests = new ArrayList<>();
+
+        //region <New Slide>
+        // create new slide request
+        CreateSlideRequest csr = new CreateSlideRequest();
+
+
+        csr.setInsertionIndex(0);
+
+        Request createRequest = new Request();
+        createRequest.setCreateSlide(csr);
+
+        requests.add(createRequest);
+        //endregion
+
+
+        //region <Populate Slide>
+
+
+        InsertTextRequest itextrequest = new InsertTextRequest();
+        itextrequest.setObjectId(presentation.getSlides().get(0).getPageElements().get(0).getObjectId());
+        itextrequest.setText("Hello?");
+        Request updateRequest = new Request();
+        updateRequest.setInsertText(itextrequest);
+        requests.add(updateRequest);
+
+        //endregion
+
+        // region <Execute requests>
         BatchUpdatePresentationRequest bupRequest = new BatchUpdatePresentationRequest();
         bupRequest.setWriteControl(new WriteControl().setRequiredRevisionId(presentation.getRevisionId()));
-        bupRequest.setRequests(new ArrayList<Request>(){{
-            add(r);}});
+        bupRequest.setRequests(requests);
         BatchUpdatePresentationResponse response = service.presentations().batchUpdate(presentationId, bupRequest).execute();
         response.getReplies().forEach(reply -> System.out.println(reply.toString()));
+        //endregion
     }
 }
