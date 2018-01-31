@@ -1,23 +1,21 @@
 import com.google.api.services.slides.v1.Slides;
-import com.google.api.services.slides.v1.model.Page;
-import com.google.api.services.slides.v1.model.Presentation;
+import com.google.api.services.slides.v1.model.*;
 import main.service.SlideService;
 
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Main {
-    /** Application name. */
-    private static final String APPLICATION_NAME =
-            "Google Slides API Test";
+    private static final String APPLICATION_NAME = "Google Slides API Test";
 
 
     public static void main(String[] args) throws IOException {
-        // Build a new authorized API client service.
         Slides service = SlideService.getSlidesService(APPLICATION_NAME);
 
         // Prints the number of slides and elements in a sample presentation:
-        // https://docs.google.com/presentation/d/1EAYk18WDjIG-zp_0vLm3CsfQh_i8eXc67Jo2O9C6Vuc/edit
+
+        // the ID is what you find the URL bar when looking at a slide from google slides :-)
         String presentationId = "12lcFWih53Vg6rbVq88ZJCZiFTtKeXMVYfjPiTJ6vefY";
         Presentation presentation = service.presentations().get(presentationId).execute();
         System.out.println(String.format("Presentation: %s", presentation.getTitle()));
@@ -28,5 +26,28 @@ public class Main {
             System.out.printf("- Slide #%s contains %s elements.\n", i + 1,
                     slide.getPageElements().size());
         }
+
+        List<Page> newSlides = new ArrayList<>(slides);
+        Page p = new Page();
+        PageElement testElement = new PageElement();
+        testElement.setTitle("NIEUWE TITEL");
+        p.setPageElements(new ArrayList<PageElement>(){{
+            add(testElement);}});
+        newSlides.add(p);
+        presentation.setSlides(newSlides);
+        presentation.setTitle("Test_Titlle");
+        Request r = new Request();
+        CreateSlideRequest csr = new CreateSlideRequest();
+        String objectId = p.getObjectId();
+        csr.setObjectId(objectId);
+        csr.setInsertionIndex(0);
+        r.setCreateSlide(csr);
+
+        BatchUpdatePresentationRequest bupRequest = new BatchUpdatePresentationRequest();
+        bupRequest.setWriteControl(new WriteControl().setRequiredRevisionId(presentation.getRevisionId()));
+        bupRequest.setRequests(new ArrayList<Request>(){{
+            add(r);}});
+        BatchUpdatePresentationResponse response = service.presentations().batchUpdate(presentationId, bupRequest).execute();
+        response.getReplies().forEach(reply -> System.out.println(reply.toString()));
     }
 }
